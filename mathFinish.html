@@ -2067,13 +2067,23 @@
         requestAnimationFrame(renderScene)
       }
 
-      window.addEventListener('resize', () => {
-        resizeCanvases()
-        buildScopeSVG()
-      })
       if (document.readyState === 'loading')
-        document.addEventListener('DOMContentLoaded', init)
-      else init()
+        document.addEventListener('DOMContentLoaded', () => requestAnimationFrame(init))
+      else requestAnimationFrame(init)
+
+      // ResizeObserver guarantees canvas is sized after real layout
+      const _viewSec = document.getElementById('view-section')
+      if (typeof ResizeObserver !== 'undefined') {
+        new ResizeObserver(() => {
+          resizeCanvases()
+          buildScopeSVG()
+        }).observe(_viewSec)
+      } else {
+        window.addEventListener('resize', () => {
+          resizeCanvases()
+          buildScopeSVG()
+        })
+      }
     </script>
   </body>
 </html>
