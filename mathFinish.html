@@ -954,35 +954,7 @@
         sky.addColorStop(1, '#010308')
         sceneCtx.fillStyle = sky
         sceneCtx.fillRect(0, 0, CW, CH)
-        for (const s of NAKED_STARS) {
-          const sx = cx + offsetX + s.nx * CW * 0.52 * zoom,
-            sy = cy + offsetY + s.ny * CH * 0.52 * zoom
-          if (sx < -5 || sx > CW + 5 || sy < -5 || sy > CH + 5) continue
-          const tw = 0.7 + 0.3 * Math.sin(t * s.tw + s.tp)
-          sceneCtx.save()
-          sceneCtx.globalAlpha = s.bright * tw
-          if (s.size > 1.0 && s.bright > 0.35) {
-            const glow = sceneCtx.createRadialGradient(
-              sx,
-              sy,
-              0,
-              sx,
-              sy,
-              s.size * 3,
-            )
-            glow.addColorStop(0, STAR_COLORS[s.ci || 0])
-            glow.addColorStop(1, 'rgba(0,0,0,0)')
-            sceneCtx.beginPath()
-            sceneCtx.arc(sx, sy, s.size * 3, 0, Math.PI * 2)
-            sceneCtx.fillStyle = glow
-            sceneCtx.fill()
-          }
-          sceneCtx.beginPath()
-          sceneCtx.arc(sx, sy, s.size, 0, Math.PI * 2)
-          sceneCtx.fillStyle = STAR_COLORS[s.ci || 4]
-          sceneCtx.fill()
-          sceneCtx.restore()
-        }
+
         drawDiameterAxis(sceneCtx, cx, cy, zoom)
       }
 
@@ -990,38 +962,6 @@
         const cx = CW / 2,
           cy = CH / 2,
           mag = getMag()
-
-        if (mag <= 20) {
-          const sc = mag / 10
-          for (const s of TELE_STARS) {
-            const sx = cx + s.nx * VR * sc,
-              sy = cy + s.ny * VR * sc
-            const tw = 0.62 + 0.38 * Math.sin(t * s.tw + s.tp)
-            sceneCtx.save()
-            sceneCtx.globalAlpha = s.bright * tw
-            if (s.size > 0.8 && s.bright > 0.45) {
-              const glow = sceneCtx.createRadialGradient(
-                sx,
-                sy,
-                0,
-                sx,
-                sy,
-                s.size * 2.5,
-              )
-              glow.addColorStop(0, 'rgba(190,210,255,0.65)')
-              glow.addColorStop(1, 'rgba(0,0,0,0)')
-              sceneCtx.beginPath()
-              sceneCtx.arc(sx, sy, s.size * 2.5, 0, Math.PI * 2)
-              sceneCtx.fillStyle = glow
-              sceneCtx.fill()
-            }
-            sceneCtx.beginPath()
-            sceneCtx.arc(sx, sy, s.size, 0, Math.PI * 2)
-            sceneCtx.fillStyle = '#fff'
-            sceneCtx.fill()
-            sceneCtx.restore()
-          }
-        }
 
         drawDiameterAxis(sceneCtx, cx, cy, mag)
       }
