@@ -308,7 +308,7 @@
       }
       .lens-kind {
         font-size: 0.52rem;
-        color: #2d3748;
+        color: #94a3b8;
         white-space: nowrap;
       }
       .lens-card.selected .lens-kind {
@@ -546,21 +546,27 @@
 
       // ── Lens Data ────────────────────────────────────────
       // 焦距越短 → 镜片弯曲度越大 → 越厚（物理正确）
+      // 目镜：5/10/20/25/40mm（5档）
       const EYEPIECES = [
-        { f: 5, kind: '高倍', thick: 0.47 }, // 5mm  焦距最短 → 最厚（左）
-        { f: 10, kind: '中倍', thick: 0.3 }, // 10mm 中等
-        { f: 20, kind: '广角', thick: 0.15 }, // 20mm 焦距最长 → 最薄（右）
+        { f:  5, kind: '高倍', thick: 0.52 },
+        { f: 10, kind: '中高', thick: 0.42 },
+        { f: 20, kind: '广角', thick: 0.20 },
+        { f: 25, kind: '超广', thick: 0.14 },
+        { f: 40, kind: '低倍', thick: 0.08 },
       ]
+      // 物镜：400/600/800/1000/1200mm（5档）
       const OBJECTIVES = [
-        { f: 100, kind: '短焦', thick: 0.38 },
-        { f: 200, kind: '中焦', thick: 0.22 },
-        { f: 400, kind: '长焦', thick: 0.1 },
+        { f:  400, kind: '短焦', thick: 0.42 },
+        { f:  600, kind: '中短', thick: 0.28 },
+        { f:  800, kind: '中焦', thick: 0.18 },
+        { f: 1000, kind: '中长', thick: 0.11 },
+        { f: 1200, kind: '长焦', thick: 0.08 },
       ]
 
       // ── State ────────────────────────────────────────────
       const S = {
-        ep: 20,
-        obj: 100,
+        ep: 10,
+        obj: 400,
         mode: 'scope',
         focused: false,
         focusing: false,
@@ -606,21 +612,27 @@
         return VR * 0.9
       }
 
-      // 获取当前倍数下直径对应的线段数
+      // 获取当前倍数下直径对应的线段数（允许小数，如2.4、9.6、1.5）
+      // 肉眼看到240段，放大mag倍后可见段数 = 240 / mag
       function getDiameterSegments(mag) {
-        // 5x→32, 10x→16, 20x→8, 40x→4, 80x→2
-        // 肉眼模式下 mag = nakedZoom，放大时结点变少（结变宽）
-        return Math.max(1, Math.round(160 / mag))
+        return Math.max(0.1, 240 / mag)
       }
 
       function getGridCellSize(mag) {
         // 保留此函数供 clampNakedOffsets / snapNakedOffsetsToGrid 兼容调用
         const r = getObservationRadius()
-        return (r * 2) / Math.max(1, Math.round(160 / mag))
+        return (r * 2) / Math.max(0.1, 240 / mag)
       }
 
       function getVisibleGridCount(mag) {
         return getDiameterSegments(mag)
+      }
+
+      // 格式化线段数：整数直接显示，小数保留最少必要位数
+      function formatSegCount(n) {
+        if (Number.isInteger(n)) return String(n)
+        // 最多保留2位小数，去掉末尾0
+        return parseFloat(n.toFixed(2)).toString()
       }
 
       function showGridCount() {
@@ -628,29 +640,79 @@
           document.getElementById('count-text').textContent = '请先对焦'
           return
         }
-        const segs = getDiameterSegments(getMag())
-        document.getElementById('count-text').textContent = `直径 ${segs} 段`
+        if (S.mode === 'naked') {
+          // 肉眼模式：刻度尺共240段，当前视野内可见段数 = 240/nakedZoom
+          const segs = getDiameterSegments(S.nakedZoom)
+          document.getElementById('count-text').textContent =
+            `视野内约 ${formatSegCount(segs)} 段（共240段）`
+        } else {
+          // 望远镜模式：月球直径对应的线段数
+          const segs = getDiameterSegments(getMag())
+          document.getElementById('count-text').textContent =
+            `直径 ${formatSegCount(segs)} 段`
+        }
       }
 
       // ── Diameter Axis Rendering ──────────────────────────────────
-      // 两种模式都显示：圆 + 十字（横轴有线段，竖轴纯线）
-      // 圆和十字始终固定在视野圆心，不随缩放/平移移动
-      function drawDiameterAxis(ctx, cx, cy, mag) {
-        const r        = getObservationRadius()   // VR * 0.9
-        const segments = getDiameterSegments(mag)
-        const segW     = (r * 2) / segments
-        // 刻度线高度缩短（约为原来的55%），呈现短线段感
-        const tickH    = Math.max(2, Math.min(6, r * 0.030))
-        const segLineW = Math.max(0.8, Math.min(2.5, segW * 0.10))
+      // mag:      望远镜传 f物/f目（决定段数 = 240/mag）；肉眼传 1（240段）
+      // nakedZoom: 肉眼缩放倍数（每段宽 = 2r*zoom/segments）；望远镜传 1
+      // offsetX:  肉眼平移量（刻度尺在视野圆内左右移动）
+      // 关键：刻度尺始终有 segments = 240/mag 段，nakedZoom 只拉宽每段，
+      //        offsetX 决定哪一部分出现在视野圆内。
+      function drawDiameterAxis(ctx, cx, cy, mag, nakedZoom, offsetX) {
+        const zoom = nakedZoom || 1
+        const ox   = offsetX  || 0
+        const r    = getObservationRadius()
+
+        const segments = getDiameterSegments(mag)   // = 240/mag，可含小数
+        const segsFull = Math.floor(segments)
+        const segsFrac = segments - segsFull
+
+        // 每大段的屏幕宽度（含缩放）
+        const segW = (r * 2 * zoom) / segments       // = 2r*zoom*mag/240
+
+        // 刻度高度自适应（段越宽越高，便于阅读）
+        const tickH    = Math.max(4, Math.min(r * 0.12, segW * 0.12))
+        const segLineW = Math.max(0.8, Math.min(5, segW * 0.10))
+
+        const subCount  = 10
+        // 细分小圆点半径由 segLineW 推导（subLineW已不再用于等分宽度）
+        const subLineW  = Math.max(0.8, segLineW * 0.55)  // 仅用于dotR计算
 
         ctx.save()
-        // 裁剪到观测圆
         ctx.beginPath()
         ctx.arc(cx, cy, r, 0, Math.PI * 2)
         ctx.clip()
+        // 坐标原点移到圆心（不含 offsetX，在绘图坐标里用 ox 控制平移）
         ctx.translate(cx, cy)
 
-        // ── ① 竖轴（完整直径，纯线，红色）──
+        // 刻度尺左端在绘图坐标系中的位置：
+        // 总长 = 2r*zoom，居中后左端 = ox - r*zoom
+        const rulerLeft = ox - r * zoom
+        const axisRightFull = rulerLeft + segments * segW
+
+        // 只渲染可见视野范围内的段（性能优化）
+        const iFirst = Math.max(0,         Math.floor((-r - rulerLeft) / segW) - 1)
+        const iLast  = Math.min(segsFull,  Math.ceil (( r - rulerLeft) / segW) + 1)
+
+        // 小数段细分：与下方 ④ 同一 nSub/gap；仅在可见小数尾时段内横轴与色块画到最后一颗细分点，避免「小格子」后拖尾
+        let axisRightDraw = axisRightFull
+        if (segsFrac > 0.001) {
+          const fracTailVisible =
+            segsFull < 1 ? iLast >= 0 : iLast >= segsFull
+          if (fracTailVisible) {
+            const nSub = Math.max(1, Math.round(segsFrac * subCount))
+            const fracW = segsFrac * segW
+            const gap = fracW / (nSub + 1)
+            axisRightDraw = rulerLeft + segsFull * segW + nSub * gap
+          }
+        }
+
+        const axisLeftDraw  = rulerLeft
+        const xAxis0 = clamp(axisLeftDraw,  -r, r)
+        const xAxis1 = clamp(axisRightDraw, -r, r)
+
+        // ── ① 竖轴（固定在圆心，不随平移移动）──
         ctx.beginPath()
         ctx.moveTo(0, -r)
         ctx.lineTo(0,  r)
@@ -658,45 +720,72 @@
         ctx.lineWidth   = 1.2
         ctx.stroke()
 
-        // ── ② 横轴：交替色块（只填充上半部分）──
-        for (let i = 0; i < segments; i++) {
-          const x0 = -r + i * segW
+        // ── ③ 横轴基准线（与刻度尺重合，不再铺满整径；小数段止于末个细分标记）──
+        if (xAxis1 > xAxis0) {
+          ctx.beginPath()
+          ctx.moveTo(xAxis0, 0)
+          ctx.lineTo(xAxis1, 0)
+          ctx.strokeStyle = 'rgba(210, 40, 40, 0.92)'
+          ctx.lineWidth   = 2.0
+          ctx.stroke()
+        }
+
+        // ── ② 交替色块 ──
+        for (let i = iFirst; i < iLast && i < segsFull; i++) {
+          const x0 = rulerLeft + i * segW
           ctx.fillStyle = i % 2 === 0
             ? 'rgba(200, 40, 40, 0.10)'
             : 'rgba(220, 60, 60, 0.07)'
-          ctx.fillRect(x0, -tickH, segW, tickH)  // 只画 y=-tickH 到 y=0
+          ctx.fillRect(x0, -tickH, segW, tickH)
+        }
+        if (segsFrac > 0.001 && iLast >= segsFull) {
+          const x0 = rulerLeft + segsFull * segW
+          const fracWDraw = Math.max(0, axisRightDraw - x0)
+          // 小数段色块与整数段保持相近透明度，否则看不见
+          ctx.fillStyle = segsFull % 2 === 0
+            ? 'rgba(200, 40, 40, 0.10)' : 'rgba(220, 60, 60, 0.13)'
+          ctx.fillRect(x0, -tickH, fracWDraw, tickH)
         }
 
-        // ── ③ 横轴：基准线（深红色）──
-        ctx.beginPath()
-        ctx.moveTo(-r, 0)
-        ctx.lineTo( r, 0)
-        ctx.strokeStyle = 'rgba(210, 40, 40, 0.92)'
-        ctx.lineWidth   = 2.0
-        ctx.stroke()
-
-        // ── ④ 横轴：段分隔刻度线（只画上半截，从横轴往上）──
-        ctx.beginPath()
-        for (let i = 0; i <= segments; i++) {
-          const x  = -r + i * segW
-          const th = (i === 0 || i === segments) ? tickH * 1.4 : tickH
-          ctx.moveTo(x, 0)    // 从横轴出发
-          ctx.lineTo(x, -th)  // 只向上延伸
+        // ── ④ 细分小圆点：段数为小数时，只在「最末小数那一段」宽度内细分
+        //    nSub = 小数×10 取整（如 0.6→6）；点与左端蓝线、点与点、末点小格子等距（末点即止，不再向右拖线）
+        if (segsFrac > 0.001) {
+          const fracTailVisible =
+            segsFull < 1 ? iLast >= 0 : iLast >= segsFull
+          if (fracTailVisible) {
+            const nSub = Math.max(1, Math.round(segsFrac * subCount))
+            const dotRSmall = Math.max(1.2, subLineW * 0.9)
+            const blueHi = 'rgba(125, 211, 252, 0.65)'
+            const midGreen = 'rgba(74, 222, 128, 0.80)'
+            const segX0 = rulerLeft + segsFull * segW
+            const fracW = segsFrac * segW
+            const gap = fracW / (nSub + 1)
+            const jGreen = Math.ceil(nSub / 2)
+            for (let j = 1; j <= nSub; j++) {
+              const sx = segX0 + j * gap
+              if (sx < -r - 2 || sx > r + 2) continue
+              ctx.beginPath()
+              ctx.arc(sx, 0, dotRSmall, 0, Math.PI * 2)
+              ctx.fillStyle = j === jGreen ? midGreen : blueHi
+              ctx.fill()
+            }
+          }
         }
-        ctx.strokeStyle = 'rgba(125, 211, 252, 0.85)'
-        ctx.lineWidth   = segLineW
-        ctx.stroke()
 
-
-        // ── ⑥ 横轴两端端帽（深红色）──
-        ctx.fillStyle = 'rgba(210, 40, 40, 0.95)'
-        ;[-r, r].forEach(x => {
+        // ── ⑤ 大段刻度线（盖在细分线上）──
+        for (let i = iFirst; i <= iLast && i <= segsFull; i++) {
+          const x  = rulerLeft + i * segW
+          if (x < -r - segW || x > r + segW) continue
+          // i===segsFull 只有在段数为整数时才是真正的右端点
+          const isRealEnd = (i === 0) || (i === segsFull && segsFrac < 0.001)
+          const th = isRealEnd ? tickH * 1.5 : tickH
           ctx.beginPath()
-          ctx.arc(x, 0, Math.max(3, segLineW * 2), 0, Math.PI * 2)
-          ctx.fill()
-        })
-
-        // ── ⑦ 竖轴两端端帽（红色）──
+          ctx.moveTo(x,  0)
+          ctx.lineTo(x, -th)
+          ctx.strokeStyle = 'rgba(125, 211, 252, 0.92)'
+          ctx.lineWidth   = segLineW
+          ctx.stroke()
+        }
         ctx.fillStyle = 'rgba(210, 40, 40, 0.70)'
         ;[-r, r].forEach(y => {
           ctx.beginPath()
@@ -704,9 +793,7 @@
           ctx.fill()
         })
 
-
         ctx.restore()
-        // 虚线圆边框已移除
       }
 
 
@@ -848,6 +935,43 @@
           overlayCtx.arc(cx, cy, VR, 0, Math.PI * 2)
           overlayCtx.fillStyle = vg
           overlayCtx.fill()
+
+          // 内缘柔和光晕（无描边框），让圆形视野与外围黑区分开
+          overlayCtx.globalCompositeOperation = 'screen'
+          const haloInner = overlayCtx.createRadialGradient(
+            cx,
+            cy,
+            VR * 0.74,
+            cx,
+            cy,
+            VR * 1,
+          )
+          haloInner.addColorStop(0, 'rgba(0,0,0,0)')
+          haloInner.addColorStop(0.72, 'rgba(45,100,155,0.08)')
+          haloInner.addColorStop(1, 'rgba(155,208,255,0.22)')
+          overlayCtx.beginPath()
+          overlayCtx.arc(cx, cy, VR, 0, Math.PI * 2)
+          overlayCtx.fillStyle = haloInner
+          overlayCtx.fill()
+          overlayCtx.globalCompositeOperation = 'source-over'
+
+          // 圆周外缘柔光（仍非线框），略照亮镜筒外黑区
+          overlayCtx.beginPath()
+          overlayCtx.rect(0, 0, CW, CH)
+          overlayCtx.arc(cx, cy, VR, 0, Math.PI * 2, true)
+          const haloOuter = overlayCtx.createRadialGradient(
+            cx,
+            cy,
+            VR * 0.96,
+            cx,
+            cy,
+            VR + 24,
+          )
+          haloOuter.addColorStop(0, 'rgba(0,0,0,0)')
+          haloOuter.addColorStop(0.45, 'rgba(35,88,140,0.12)')
+          haloOuter.addColorStop(1, 'rgba(0,0,0,0)')
+          overlayCtx.fillStyle = haloOuter
+          overlayCtx.fill('evenodd')
           overlayCtx.restore()
           return
         }
@@ -955,7 +1079,8 @@
         sceneCtx.fillStyle = sky
         sceneCtx.fillRect(0, 0, CW, CH)
 
-        drawDiameterAxis(sceneCtx, cx, cy, zoom)
+        // 肉眼模式：始终240段，nakedZoom拉宽每段，offsetX平移查看不同位置
+        drawDiameterAxis(sceneCtx, cx, cy, 1, zoom, S.nakedOffsetX)
       }
 
       function renderTelescopeView(t) {
@@ -963,7 +1088,7 @@
           cy = CH / 2,
           mag = getMag()
 
-        drawDiameterAxis(sceneCtx, cx, cy, mag)
+        drawDiameterAxis(sceneCtx, cx, cy, mag, 1, 0)
       }
 
       // ── White Telescope SVG  (目镜在左 / 物镜在右) ──────────
@@ -1744,11 +1869,7 @@
             (ep.f === S.ep ? ' selected' : '') +
             (disabled ? ' disabled' : '')
           let html = lensCardSVG(ep.f, ep.thick, 26, true)
-          if (S.showFocal) {
-            html += `<div class="lens-kind">${ep.f}mm</div>`
-          } else {
-            html += `<div class="lens-kind" style="opacity:0;">${ep.f}mm</div>`
-          }
+          html += `<div class="lens-kind">${ep.f}mm</div>`
           card.innerHTML = html
           if (!disabled)
             card.addEventListener('click', () => changeLens('ep', ep.f))
@@ -1762,11 +1883,7 @@
             (ob.f === S.obj ? ' selected' : '') +
             (disabled ? ' disabled' : '')
           let html = lensCardSVG(ob.f, ob.thick, 34, false)
-          if (S.showFocal) {
-            html += `<div class="lens-kind">${ob.f}mm</div>`
-          } else {
-            html += `<div class="lens-kind" style="opacity:0;">${ob.f}mm</div>`
-          }
+          html += `<div class="lens-kind">${ob.f}mm</div>`
           card.innerHTML = html
           if (!disabled)
             card.addEventListener('click', () => changeLens('obj', ob.f))
@@ -1919,11 +2036,14 @@
       }
 
       function clampNakedOffsets() {
-        // 轴线视觉半径 = 观测圆半径 × 当前缩放
-        const axR = getObservationRadius() * S.nakedZoom
-        // 允许平移到轴线仍有一半在视野圆内
-        const maxOffsetX = Math.max(0, axR - VR * 0.5)
-        const maxOffsetY = Math.max(0, axR - VR * 0.5)
+        const r    = getObservationRadius()
+        const zoom = S.nakedZoom
+        // X 方向：刻度尺虚拟全长 = 2r（实际）× zoom 倍放大，
+        // 可平移量 = 虚拟半长 - 视野半径 = r×zoom - r = r(zoom-1)
+        // 这样用户能把刻度尺的任意位置移到视野中心
+        const maxOffsetX = Math.max(0, r * (zoom - 1))
+        // Y 方向：轴线是水平线，纵向不需要大幅移动，允许微小抖动即可
+        const maxOffsetY = r * 0.3
         S.nakedOffsetX = clamp(S.nakedOffsetX, -maxOffsetX, maxOffsetX)
         S.nakedOffsetY = clamp(S.nakedOffsetY, -maxOffsetY, maxOffsetY)
       }
@@ -1932,18 +2052,18 @@
         clampNakedOffsets()
       }
 
-      function setNakedZoom(nextZoom, anchorX = CW / 2, anchorY = CH / 2) {
+      function setNakedZoom(nextZoom) {
         const prevZoom = S.nakedZoom
-        const zoom = clamp(nextZoom, 1, 8)
+        const zoom     = clamp(nextZoom, 1, 90)
         if (zoom === prevZoom) return
 
-        const relX = anchorX - CW / 2 - S.nakedOffsetX
-        const relY = anchorY - CH / 2 - S.nakedOffsetY
-        const scale = zoom / prevZoom
-
-        S.nakedOffsetX = anchorX - CW / 2 - relX * scale
-        S.nakedOffsetY = anchorY - CH / 2 - relY * scale
-        S.nakedZoom = zoom
+        // 以刻度尺当前可见中心为锚点缩放：
+        // offsetX 表示"刻度尺上哪个位置在视野中心"，缩放时该位置不变，
+        // 只是每段变宽/窄。因此 offsetX 按 zoom/prevZoom 等比例缩放。
+        const scale    = zoom / prevZoom
+        S.nakedOffsetX = S.nakedOffsetX * scale
+        S.nakedOffsetY = S.nakedOffsetY * scale
+        S.nakedZoom    = zoom
         clampNakedOffsets()
       }
 
@@ -1956,105 +2076,98 @@
         const sec = document.getElementById('view-section')
         if (!sec) return
 
-        sec.addEventListener(
-          'wheel',
-          (e) => {
-            if (S.mode !== 'naked') return
-            e.preventDefault()
-            const factor = e.deltaY < 0 ? 1.12 : 0.9
-            const rect = sec.getBoundingClientRect()
-            setNakedZoom(
-              S.nakedZoom * factor,
-              e.clientX - rect.left,
-              e.clientY - rect.top,
-            )
-            snapNakedOffsetsToGrid()
-          },
-          { passive: false },
-        )
+        // ── 鼠标滚轮：放大 / 缩小 ──────────────────────────────
+        sec.addEventListener('wheel', (e) => {
+          if (S.mode !== 'naked') return
+          e.preventDefault()
+          const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15
+          const rect   = sec.getBoundingClientRect()
+          setNakedZoom(S.nakedZoom * factor)
+          clampNakedOffsets()
+          applyViewInteractionMode()
+        }, { passive: false })
+
+        // ── 鼠标左键拖动：平移 ─────────────────────────────────
+        let mouseDown = false
+        let mouseMoved = false
 
         sec.addEventListener('mousedown', (e) => {
-          if (S.mode !== 'naked') return
-          isDraggingNaked = true
-          dragStartX = e.clientX
-          dragStartY = e.clientY
+          if (S.mode !== 'naked' || e.button !== 0) return
+          mouseDown  = true
+          mouseMoved = false
+          dragStartX  = e.clientX
+          dragStartY  = e.clientY
           dragOriginX = S.nakedOffsetX
           dragOriginY = S.nakedOffsetY
-          sec.style.cursor = 'grabbing'
         })
 
         window.addEventListener('mousemove', (e) => {
-          if (!isDraggingNaked || S.mode !== 'naked') return
-          S.nakedOffsetX = dragOriginX + (e.clientX - dragStartX)
-          S.nakedOffsetY = dragOriginY + (e.clientY - dragStartY)
+          if (!mouseDown || S.mode !== 'naked') return
+          const dx = e.clientX - dragStartX
+          const dy = e.clientY - dragStartY
+          // 超过 3px 死区才进入拖动（避免误触）
+          if (!mouseMoved && Math.hypot(dx, dy) < 3) return
+          mouseMoved = true
+          isDraggingNaked = true
+          sec.style.cursor = 'grabbing'
+          S.nakedOffsetX = dragOriginX + dx
+          S.nakedOffsetY = dragOriginY + dy
           clampNakedOffsets()
         })
 
         window.addEventListener('mouseup', () => {
-          if (isDraggingNaked && S.mode === 'naked') snapNakedOffsetsToGrid()
+          mouseDown = false
           isDraggingNaked = false
-          sec.style.cursor = ''
+          sec.style.cursor = S.mode === 'naked' && S.nakedZoom > 1 ? 'grab' : ''
         })
 
-        sec.addEventListener(
-          'touchstart',
-          (e) => {
-            if (S.mode !== 'naked') return
-            if (e.touches.length === 2) {
-              pinchStartDist = getTouchDistance(e.touches)
-              pinchStartZoom = S.nakedZoom
-              isDraggingNaked = false
-              return
-            }
-            if (e.touches.length === 1) {
-              isDraggingNaked = true
-              dragStartX = e.touches[0].clientX
-              dragStartY = e.touches[0].clientY
-              dragOriginX = S.nakedOffsetX
-              dragOriginY = S.nakedOffsetY
-            }
-          },
-          { passive: true },
-        )
+        // ── 触摸：双指捏合缩放 + 单指滑动平移 ────────────────────
+        sec.addEventListener('touchstart', (e) => {
+          if (S.mode !== 'naked') return
+          if (e.touches.length === 2) {
+            pinchStartDist = getTouchDistance(e.touches)
+            pinchStartZoom = S.nakedZoom
+            isDraggingNaked = false
+            return
+          }
+          if (e.touches.length === 1) {
+            isDraggingNaked = true
+            dragStartX  = e.touches[0].clientX
+            dragStartY  = e.touches[0].clientY
+            dragOriginX = S.nakedOffsetX
+            dragOriginY = S.nakedOffsetY
+          }
+        }, { passive: true })
 
-        sec.addEventListener(
-          'touchmove',
-          (e) => {
-            if (S.mode !== 'naked') return
-            if (e.touches.length === 2 && pinchStartDist) {
-              e.preventDefault()
-              const dist = getTouchDistance(e.touches)
-              if (dist > 0) {
-                const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2
-                const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2
-                const rect = sec.getBoundingClientRect()
-                setNakedZoom(
-                  pinchStartZoom * (dist / pinchStartDist),
-                  midX - rect.left,
-                  midY - rect.top,
-                )
-              }
-              return
-            }
-            if (e.touches.length === 1 && isDraggingNaked) {
-              e.preventDefault()
-              S.nakedOffsetX = dragOriginX + (e.touches[0].clientX - dragStartX)
-              S.nakedOffsetY = dragOriginY + (e.touches[0].clientY - dragStartY)
+        sec.addEventListener('touchmove', (e) => {
+          if (S.mode !== 'naked') return
+          if (e.touches.length === 2 && pinchStartDist) {
+            e.preventDefault()
+            const dist = getTouchDistance(e.touches)
+            if (dist > 0) {
+              const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2
+              const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2
+              const rect = sec.getBoundingClientRect()
+              setNakedZoom(pinchStartZoom * (dist / pinchStartDist))
               clampNakedOffsets()
+              applyViewInteractionMode()
             }
-          },
-          { passive: false },
-        )
+            return
+          }
+          if (e.touches.length === 1 && isDraggingNaked) {
+            e.preventDefault()
+            S.nakedOffsetX = dragOriginX + (e.touches[0].clientX - dragStartX)
+            S.nakedOffsetY = dragOriginY + (e.touches[0].clientY - dragStartY)
+            clampNakedOffsets()
+          }
+        }, { passive: false })
 
-        const resetInteractions = () => {
-          if ((pinchStartDist || isDraggingNaked) && S.mode === 'naked')
-            snapNakedOffsetsToGrid()
-          pinchStartDist = 0
+        const resetTouch = () => {
+          pinchStartDist  = 0
           isDraggingNaked = false
-          sec.style.cursor = ''
         }
-        sec.addEventListener('touchend', resetInteractions)
-        sec.addEventListener('touchcancel', resetInteractions)
+        sec.addEventListener('touchend',    resetTouch)
+        sec.addEventListener('touchcancel', resetTouch)
       }
 
       // ── Init ──────────────────────────────────────────────
