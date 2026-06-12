@@ -109,7 +109,8 @@
       /* ── Scope Section ── */
       #scope-section {
         flex-shrink: 0;
-        height: clamp(270px, 46vh, 340px);
+        height: auto;
+        max-height: clamp(320px, 50vh, 360px);
         background: linear-gradient(180deg, #060e1a 0%, #0a1525 100%);
         border-top: 1px solid rgba(255, 255, 255, 0.06);
         padding: 10px 14px 8px;
@@ -279,7 +280,7 @@
       .lens-options {
         display: flex;
         gap: 4px;
-        flex: 1;
+        flex: 5;
       }
       .lens-card {
         flex: 1;
@@ -355,7 +356,8 @@
 
       @media (max-width: 900px) {
         #scope-section {
-          height: clamp(228px, 41vh, 295px);
+          height: auto;
+          max-height: clamp(300px, 46vh, 345px);
           padding: 8px 11px 6px;
         }
         .scope-wrap {
@@ -377,7 +379,8 @@
           font-size: 0.55rem;
         }
         #scope-section {
-          height: clamp(214px, 38vh, 268px);
+          height: auto;
+          max-height: clamp(280px, 44vh, 320px);
           padding: 7px 9px 5px;
         }
         .focus-top {
@@ -566,7 +569,7 @@
         align-items: center;
         gap: 8px;
         flex-shrink: 0;
-        margin: 4px 0;
+        margin: 3px 0;
       }
       .sep-line {
         flex: 1;
@@ -574,27 +577,29 @@
         background: rgba(255, 255, 255, 0.06);
       }
       .custom-section-label {
-        font-size: 0.64rem;
+        font-size: 0.9rem;
         font-weight: 700;
-        color: rgba(96, 165, 250, 0.75);
+        color: rgba(96, 165, 250, 0.85);
         white-space: nowrap;
         flex-shrink: 0;
-        letter-spacing: 0.04em;
+        letter-spacing: 0.03em;
+        padding-right: 4px;
       }
 
       /* ── Inline custom input (inside each lens-row) ── */
       .custom-inline-wrap {
-        flex-shrink: 0;
-        width: 140px;
+        flex: 1;
+        min-width: 0;
         display: flex;
+        flex-direction: column;
         align-items: center;
-        gap: 5px;
+        justify-content: center;
+        gap: 3px;
         background: rgba(255, 255, 255, 0.05);
         border: 1.5px solid rgba(255, 255, 255, 0.12);
-        border-radius: 9px;
-        padding: 0 10px;
-        height: 100%;
-        min-height: 44px;
+        border-radius: 8px;
+        padding: 5px 3px 4px;
+        align-self: stretch;
         transition: border-color 0.18s, background 0.18s, opacity 0.2s;
         cursor: text;
       }
@@ -607,15 +612,16 @@
         pointer-events: none;
       }
       .custom-inline-input {
-        flex: 1;
+        width: 100%;
         min-width: 0;
         background: transparent;
         border: none;
         outline: none;
         color: #e2e8f0;
-        font-size: 1rem;
+        font-size: 0.82rem;
         font-weight: 600;
         font-family: inherit;
+        text-align: center;
         -moz-appearance: textfield;
       }
       .custom-inline-input::-webkit-outer-spin-button,
@@ -623,12 +629,12 @@
         -webkit-appearance: none;
       }
       .custom-inline-input::placeholder {
-        color: rgba(255, 255, 255, 0.2);
+        color: rgba(255, 255, 255, 0.22);
         font-weight: 400;
-        font-size: 0.82rem;
+        font-size: 0.6rem;
       }
       .custom-inline-unit {
-        font-size: 0.66rem;
+        font-size: 0.52rem;
         color: #4b5563;
         flex-shrink: 0;
       }
@@ -701,7 +707,7 @@
             class="custom-inline-input"
             min="1"
             max="500"
-            placeholder="目镜 mm"
+            placeholder="目镜"
             onfocus="resetFocusOnCustomInput()"
             oninput="updateCustomDisplay()"
           />
@@ -720,7 +726,7 @@
             class="custom-inline-input"
             min="1"
             max="9999"
-            placeholder="物镜 mm"
+            placeholder="物镜"
             onfocus="resetFocusOnCustomInput()"
             oninput="updateCustomDisplay()"
           />
@@ -791,9 +797,7 @@
         if (lbl)  lbl.textContent  = '自动对焦'
         if (btn)  btn.disabled     = false
         const countText = document.getElementById('count-text')
-        if (countText && !countText.textContent.includes('自定义')) {
-          countText.textContent = '未查看'
-        }
+        if (countText) countText.textContent = '未查看'
         updateStatus()
         drawOverlay()
       }
@@ -819,19 +823,8 @@
 
       function updateCustomDisplay() {
         const countText = document.getElementById('count-text')
-        const custom = getCustomValues()
-        if (custom) {
-          const mag  = custom.obj / custom.ep
-          const segs = 240 / mag
-          if (countText) {
-            countText.textContent = `直径 ${formatSegCount(segs)} 段（自定义）`
-          }
-        } else {
-          // 清除自定义标记，恢复默认提示
-          if (countText && countText.textContent.includes('自定义')) {
-            countText.textContent = '未查看'
-          }
-        }
+        // 只要输入有变化，清除上一次查看的结果，等待重新点击「查看线段数」
+        if (countText) countText.textContent = '未查看'
         // 重建卡片：有自定义内容时取消预设卡片高亮
         buildLensCards()
       }
@@ -898,8 +891,9 @@
         } else {
           // 望远镜模式：月球直径对应的线段数
           const segs = getDiameterSegments(getMag())
+          const suffix = hasAnyCustomInput() ? '（自定义）' : ''
           document.getElementById('count-text').textContent =
-            `直径 ${formatSegCount(segs)} 段`
+            `直径 ${formatSegCount(segs)} 段${suffix}`
         }
       }
 
@@ -937,28 +931,18 @@
         ctx.translate(cx, cy)
 
         // 刻度尺左端在绘图坐标系中的位置：
-        // 总长 = 2r*zoom，居中后左端 = ox - r*zoom
-        const rulerLeft = ox - r * zoom
+        // 将整数段居中：把半个小数段宽加到左端，使两侧各保留等长小数尾
+        const halfFracW = (segsFrac * segW) / 2
+        const rulerLeft = ox - r * zoom + halfFracW
         const axisRightFull = rulerLeft + segments * segW
 
         // 只渲染可见视野范围内的段（性能优化）
         const iFirst = Math.max(0,         Math.floor((-r - rulerLeft) / segW) - 1)
         const iLast  = Math.min(segsFull,  Math.ceil (( r - rulerLeft) / segW) + 1)
 
-        // 小数段细分：与下方 ④ 同一 nSub/gap；仅在可见小数尾时段内横轴与色块画到最后一颗细分点，避免「小格子」后拖尾
-        let axisRightDraw = axisRightFull
-        if (segsFrac > 0.001) {
-          const fracTailVisible =
-            segsFull < 1 ? iLast >= 0 : iLast >= segsFull
-          if (fracTailVisible) {
-            const nSub = Math.max(1, Math.round(segsFrac * subCount))
-            const fracW = segsFrac * segW
-            const gap = fracW / (nSub + 1)
-            axisRightDraw = rulerLeft + segsFull * segW + nSub * gap
-          }
-        }
-
-        const axisLeftDraw  = rulerLeft
+        // 横轴两端对称：左右各延伸至视野圆边缘（±r）
+        const axisLeftDraw  = ox - r * zoom
+        let   axisRightDraw = ox + r * zoom
         const xAxis0 = clamp(axisLeftDraw,  -r, r)
         const xAxis1 = clamp(axisRightDraw, -r, r)
 
@@ -988,35 +972,46 @@
             : 'rgba(220, 60, 60, 0.07)'
           ctx.fillRect(x0, -tickH, segW, tickH)
         }
-        if (segsFrac > 0.001 && iLast >= segsFull) {
-          const x0 = rulerLeft + segsFull * segW
-          const fracWDraw = Math.max(0, axisRightDraw - x0)
-          // 小数段色块与整数段保持相近透明度，否则看不见
-          ctx.fillStyle = segsFull % 2 === 0
+        if (segsFrac > 0.001) {
+          const tailColor = segsFull % 2 === 0
             ? 'rgba(200, 40, 40, 0.10)' : 'rgba(220, 60, 60, 0.13)'
-          ctx.fillRect(x0, -tickH, fracWDraw, tickH)
+          // 右侧小数尾色块
+          if (iLast >= segsFull) {
+            const x0 = rulerLeft + segsFull * segW
+            ctx.fillStyle = tailColor
+            ctx.fillRect(x0, -tickH, halfFracW, tickH)
+          }
+          // 左侧小数尾色块（对称）
+          const leftTailX0 = ox - r * zoom
+          if (leftTailX0 + halfFracW > -r) {
+            ctx.fillStyle = tailColor
+            ctx.fillRect(leftTailX0, -tickH, halfFracW, tickH)
+          }
         }
 
-        // ── ④ 细分小圆点：段数为小数时，只在「最末小数那一段」宽度内细分
-        //    nSub = 小数×10 取整（如 0.6→6）；点与左端蓝线、点与点、末点小格子等距（末点即止，不再向右拖线）
-        if (segsFrac > 0.001) {
-          const fracTailVisible =
-            segsFull < 1 ? iLast >= 0 : iLast >= segsFull
-          if (fracTailVisible) {
-            const nSub = Math.max(1, Math.round(segsFrac * subCount))
-            const dotRSmall = Math.max(1.2, subLineW * 0.9)
-            const blueHi = 'rgba(125, 211, 252, 0.65)'
-            const midGreen = 'rgba(74, 222, 128, 0.80)'
-            const segX0 = rulerLeft + segsFull * segW
-            const fracW = segsFrac * segW
-            const gap = fracW / (nSub + 1)
-            const jGreen = Math.ceil(nSub / 2)
-            for (let j = 1; j <= nSub; j++) {
-              const sx = segX0 + j * gap
-              if (sx < -r - 2 || sx > r + 2) continue
+        // ── ④ 细分小圆点：两侧各半个小数段宽，左右对称分布
+        if (segsFrac > 0.001 && halfFracW > 0.5) {
+          const nSubHalf = Math.max(1, Math.round(segsFrac / 2 * subCount))
+          const dotRSmall = Math.max(1.2, subLineW * 0.9)
+          const blueHi = 'rgba(125, 211, 252, 0.65)'
+          const gap = halfFracW / (nSubHalf + 1)
+          // 左侧尾：从视野左边缘向右
+          const leftX0 = ox - r * zoom
+          // 右侧尾：从最后整数段结束处向右
+          const rightX0 = rulerLeft + segsFull * segW
+          for (let j = 1; j <= nSubHalf; j++) {
+            const sxL = leftX0  + j * gap
+            const sxR = rightX0 + j * gap
+            if (sxL > -r - 2 && sxL < r + 2) {
               ctx.beginPath()
-              ctx.arc(sx, 0, dotRSmall, 0, Math.PI * 2)
-              ctx.fillStyle = j === jGreen ? midGreen : blueHi
+              ctx.arc(sxL, 0, dotRSmall, 0, Math.PI * 2)
+              ctx.fillStyle = blueHi
+              ctx.fill()
+            }
+            if (sxR > -r - 2 && sxR < r + 2) {
+              ctx.beginPath()
+              ctx.arc(sxR, 0, dotRSmall, 0, Math.PI * 2)
+              ctx.fillStyle = blueHi
               ctx.fill()
             }
           }
@@ -1026,8 +1021,8 @@
         for (let i = iFirst; i <= iLast && i <= segsFull; i++) {
           const x  = rulerLeft + i * segW
           if (x < -r - segW || x > r + segW) continue
-          // i===segsFull 只有在段数为整数时才是真正的右端点
-          const isRealEnd = (i === 0) || (i === segsFull && segsFrac < 0.001)
+          // i===0 和 i===segsFull 是整数段的两个对称端点，均显示较高刻度
+          const isRealEnd = (i === 0) || (i === segsFull)
           const th = isRealEnd ? tickH * 1.5 : tickH
           ctx.beginPath()
           ctx.moveTo(x,  0)
