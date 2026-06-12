@@ -109,32 +109,36 @@
       /* ── Scope Section ── */
       #scope-section {
         flex-shrink: 0;
-        height: clamp(232px, 43vh, 300px);
+        height: clamp(270px, 46vh, 340px);
         background: linear-gradient(180deg, #060e1a 0%, #0a1525 100%);
         border-top: 1px solid rgba(255, 255, 255, 0.06);
-        padding: 7px 13px 5px;
+        padding: 10px 14px 8px;
         display: flex;
         flex-direction: column;
         gap: 0;
-        overflow: hidden;
+        overflow-y: auto;
+        overflow-x: hidden;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(96,165,250,0.2) transparent;
       }
 
-      /* ── Focus button (top of scope section) ── */
+      /* ── Action buttons row (focus + count + result) ── */
       .focus-top {
         flex-shrink: 0;
-        margin-bottom: 6px;
+        margin-bottom: 8px;
         display: flex;
         gap: 8px;
+        align-items: stretch;
       }
       .focus-btn {
-        flex: 1;
-        padding: 7px 12px;
+        flex: 1.2;
+        padding: 11px 14px;
         background: linear-gradient(135deg, #1d4ed8, #6d28d9);
         border: none;
-        border-radius: 8px;
+        border-radius: 10px;
         color: #fff;
-        font-size: 0.76rem;
-        font-weight: 600;
+        font-size: 0.9rem;
+        font-weight: 700;
         cursor: pointer;
         transition:
           opacity 0.2s,
@@ -145,15 +149,15 @@
         justify-content: center;
         gap: 6px;
         white-space: nowrap;
-        box-shadow: 0 2px 10px rgba(29, 78, 216, 0.35);
-        letter-spacing: 0.02em;
+        box-shadow: 0 2px 12px rgba(29, 78, 216, 0.4);
+        letter-spacing: 0.03em;
       }
       .focus-btn:hover:not(:disabled) {
         opacity: 0.9;
-        box-shadow: 0 4px 14px rgba(29, 78, 216, 0.5);
+        box-shadow: 0 4px 16px rgba(29, 78, 216, 0.55);
       }
       .focus-btn:active:not(:disabled) {
-        transform: scale(0.99);
+        transform: scale(0.98);
       }
       .focus-btn:disabled {
         opacity: 0.35;
@@ -161,28 +165,29 @@
         box-shadow: none;
       }
       .count-btn {
-        flex: 1;
-        padding: 7px 12px;
+        flex: 1.2;
+        padding: 11px 14px;
         background: linear-gradient(135deg, #0f766e, #0891b2);
         border: none;
-        border-radius: 8px;
+        border-radius: 10px;
         color: #fff;
-        font-size: 0.76rem;
-        font-weight: 600;
+        font-size: 0.9rem;
+        font-weight: 700;
         cursor: pointer;
         transition:
           opacity 0.2s,
           transform 0.15s,
           box-shadow 0.2s;
-        box-shadow: 0 2px 10px rgba(8, 145, 178, 0.3);
-        letter-spacing: 0.02em;
+        box-shadow: 0 2px 12px rgba(8, 145, 178, 0.35);
+        letter-spacing: 0.03em;
+        white-space: nowrap;
       }
       .count-btn:hover {
         opacity: 0.92;
-        box-shadow: 0 4px 14px rgba(8, 145, 178, 0.42);
+        box-shadow: 0 4px 16px rgba(8, 145, 178, 0.48);
       }
       .count-btn:active {
-        transform: scale(0.99);
+        transform: scale(0.98);
       }
       .count-btn:disabled {
         opacity: 0.35;
@@ -190,46 +195,50 @@
         box-shadow: none;
       }
       .count-text {
-        min-width: 116px;
-        padding: 7px 10px;
-        border-radius: 8px;
-        background: rgba(255, 255, 255, 0.04);
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        flex: 1;
+        min-width: 0;
+        padding: 8px 10px;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
         color: #94a3b8;
-        font-size: 0.72rem;
+        font-size: 0.78rem;
         display: flex;
         align-items: center;
         justify-content: center;
         text-align: center;
-        line-height: 1.2;
+        line-height: 1.3;
       }
+
+      /* ── Mode buttons row ── */
       .mode-row {
         display: flex;
-        gap: 6px;
+        gap: 8px;
         flex-shrink: 0;
-        margin-bottom: 5px;
+        margin-bottom: 8px;
       }
       .mode-btn {
         flex: 1;
-        padding: 5px 8px;
-        background: rgba(255, 255, 255, 0.04);
-        border: 1.5px solid rgba(255, 255, 255, 0.08);
-        border-radius: 7px;
-        color: #4b5563;
-        font-size: 0.7rem;
-        font-weight: 600;
+        padding: 10px 12px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1.5px solid rgba(255, 255, 255, 0.10);
+        border-radius: 10px;
+        color: #6b7280;
+        font-size: 0.88rem;
+        font-weight: 700;
         cursor: pointer;
         transition: all 0.18s;
+        letter-spacing: 0.02em;
       }
       .mode-btn:hover {
-        background: rgba(255, 255, 255, 0.07);
+        background: rgba(255, 255, 255, 0.09);
         color: #94a3b8;
       }
       .mode-btn.active {
-        background: rgba(96, 165, 250, 0.12);
+        background: rgba(96, 165, 250, 0.15);
         border-color: #60a5fa;
         color: #60a5fa;
-        box-shadow: 0 0 10px rgba(96, 165, 250, 0.15);
+        box-shadow: 0 0 12px rgba(96, 165, 250, 0.2);
       }
 
       /* Telescope wrap */
@@ -248,7 +257,7 @@
         height: 1px;
         background: rgba(255, 255, 255, 0.06);
         flex-shrink: 0;
-        margin: 5px 0;
+        margin: 6px 0;
       }
 
       /* Lens selector rows */
@@ -346,8 +355,8 @@
 
       @media (max-width: 900px) {
         #scope-section {
-          height: clamp(220px, 39vh, 290px);
-          padding: 7px 10px 5px;
+          height: clamp(228px, 41vh, 295px);
+          padding: 8px 11px 6px;
         }
         .scope-wrap {
           height: 74px;
@@ -368,24 +377,24 @@
           font-size: 0.55rem;
         }
         #scope-section {
-          height: clamp(204px, 35vh, 252px);
-          padding: 6px 8px 4px;
+          height: clamp(214px, 38vh, 268px);
+          padding: 7px 9px 5px;
         }
         .focus-top {
-          margin-bottom: 5px;
+          margin-bottom: 6px;
+          gap: 6px;
         }
         .focus-btn {
-          padding: 6px 10px;
-          font-size: 0.72rem;
+          padding: 9px 10px;
+          font-size: 0.82rem;
         }
         .count-btn {
-          padding: 6px 10px;
-          font-size: 0.72rem;
+          padding: 9px 10px;
+          font-size: 0.82rem;
         }
         .count-text {
-          min-width: 98px;
-          padding: 6px 8px;
-          font-size: 0.66rem;
+          padding: 7px 8px;
+          font-size: 0.7rem;
         }
         .scope-wrap {
           height: 68px;
@@ -409,15 +418,99 @@
           font-size: 0.62rem;
         }
         .mode-row {
-          margin-bottom: 4px;
+          margin-bottom: 6px;
+          gap: 6px;
         }
         .mode-btn {
-          font-size: 0.62rem;
-          padding: 4px 4px;
+          font-size: 0.8rem;
+          padding: 8px 8px;
         }
       }
 
-      @media (max-height: 760px) and (orientation: landscape) {
+      /* ── 横屏平板专用：scope-section 改为可滚动，确保镜片选择器可见 ── */
+      @media (orientation: landscape) and (max-height: 600px) {
+        body {
+          flex-direction: row;
+          overflow: hidden;
+        }
+        header {
+          writing-mode: initial;
+          flex-shrink: 0;
+          width: auto;
+          padding: 4px 8px 2px;
+          border-bottom: none;
+          border-right: 1px solid rgba(255, 255, 255, 0.05);
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          min-width: 0;
+        }
+        #view-section {
+          flex: 1;
+          height: 100dvh;
+          min-height: 0;
+        }
+        #scope-section {
+          flex-shrink: 0;
+          width: clamp(220px, 36vw, 320px);
+          height: 100dvh;
+          border-top: none;
+          border-left: 1px solid rgba(255, 255, 255, 0.06);
+          padding: 8px 10px 6px;
+          overflow-y: auto;
+          overflow-x: hidden;
+          scrollbar-width: thin;
+          scrollbar-color: rgba(96,165,250,0.25) transparent;
+        }
+        .scope-wrap {
+          height: 62px;
+        }
+        .focus-top {
+          margin-bottom: 6px;
+          gap: 5px;
+        }
+        .focus-btn {
+          padding: 8px 8px;
+          font-size: 0.78rem;
+        }
+        .count-btn {
+          padding: 8px 8px;
+          font-size: 0.78rem;
+        }
+        .count-text {
+          padding: 6px 6px;
+          font-size: 0.66rem;
+        }
+        .mode-row {
+          margin-bottom: 6px;
+          gap: 5px;
+        }
+        .mode-btn {
+          font-size: 0.75rem;
+          padding: 7px 6px;
+        }
+        .sep {
+          margin: 4px 0;
+        }
+        .page-subtitle {
+          display: none;
+        }
+        .page-title {
+          font-size: 0.82rem;
+          writing-mode: vertical-rl;
+          text-orientation: mixed;
+          letter-spacing: 0.08em;
+        }
+        .lens-row {
+          padding: 2px 0;
+        }
+        .lens-card {
+          padding: 4px 2px 3px;
+        }
+      }
+
+      @media (max-height: 760px) and (orientation: landscape) and (min-height: 601px) {
         header {
           padding: 4px 10px 2px;
         }
@@ -428,34 +521,36 @@
           display: none;
         }
         #scope-section {
-          height: clamp(164px, 31vh, 210px);
-          padding: 5px 8px 4px;
+          height: clamp(178px, 34vh, 220px);
+          padding: 6px 10px 5px;
+          overflow-y: auto;
+          scrollbar-width: thin;
+          scrollbar-color: rgba(96,165,250,0.25) transparent;
         }
         .focus-top {
-          margin-bottom: 4px;
+          margin-bottom: 6px;
         }
         .focus-btn {
-          padding: 5px 10px;
-          font-size: 0.68rem;
+          padding: 8px 10px;
+          font-size: 0.8rem;
         }
         .count-btn {
-          padding: 5px 10px;
-          font-size: 0.68rem;
+          padding: 8px 10px;
+          font-size: 0.8rem;
         }
         .count-text {
-          min-width: 92px;
-          padding: 5px 8px;
-          font-size: 0.62rem;
+          padding: 6px 8px;
+          font-size: 0.68rem;
         }
         .mode-row {
-          margin-bottom: 4px;
+          margin-bottom: 5px;
         }
         .mode-btn {
-          font-size: 0.6rem;
-          padding: 4px 5px;
+          font-size: 0.75rem;
+          padding: 7px 6px;
         }
         .scope-wrap {
-          height: 54px;
+          height: 58px;
         }
         .lens-row {
           padding: 1px 0;
@@ -463,6 +558,79 @@
         .lens-card {
           padding: 3px 2px 2px;
         }
+      }
+
+      /* ── Separator row with custom section label ── */
+      .sep-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+        margin: 4px 0;
+      }
+      .sep-line {
+        flex: 1;
+        height: 1px;
+        background: rgba(255, 255, 255, 0.06);
+      }
+      .custom-section-label {
+        font-size: 0.64rem;
+        font-weight: 700;
+        color: rgba(96, 165, 250, 0.75);
+        white-space: nowrap;
+        flex-shrink: 0;
+        letter-spacing: 0.04em;
+      }
+
+      /* ── Inline custom input (inside each lens-row) ── */
+      .custom-inline-wrap {
+        flex-shrink: 0;
+        width: 140px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1.5px solid rgba(255, 255, 255, 0.12);
+        border-radius: 9px;
+        padding: 0 10px;
+        height: 100%;
+        min-height: 44px;
+        transition: border-color 0.18s, background 0.18s, opacity 0.2s;
+        cursor: text;
+      }
+      .custom-inline-wrap:focus-within {
+        border-color: #60a5fa;
+        background: rgba(96, 165, 250, 0.09);
+      }
+      .custom-inline-wrap.inactive {
+        opacity: 0.25;
+        pointer-events: none;
+      }
+      .custom-inline-input {
+        flex: 1;
+        min-width: 0;
+        background: transparent;
+        border: none;
+        outline: none;
+        color: #e2e8f0;
+        font-size: 1rem;
+        font-weight: 600;
+        font-family: inherit;
+        -moz-appearance: textfield;
+      }
+      .custom-inline-input::-webkit-outer-spin-button,
+      .custom-inline-input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+      }
+      .custom-inline-input::placeholder {
+        color: rgba(255, 255, 255, 0.2);
+        font-weight: 400;
+        font-size: 0.82rem;
+      }
+      .custom-inline-unit {
+        font-size: 0.66rem;
+        color: #4b5563;
+        flex-shrink: 0;
       }
     </style>
   </head>
@@ -482,34 +650,28 @@
     </div>
 
     <div id="scope-section">
-      <!-- Auto-focus button (topmost) -->
-      <div class="focus-top">
-        <button class="focus-btn" id="focus-btn" onclick="triggerFocus()">
-          <span id="focus-icon">⊙</span>
-          <span id="focus-label">自动对焦</span>
-        </button>
-        <button class="count-btn" onclick="showGridCount()">查看线段数</button>
-        <div class="count-text" id="count-text">未查看</div>
-      </div>
-
+      <!-- Mode selector row -->
       <div class="mode-row">
         <button
           class="mode-btn active"
           id="mode-scope-btn"
           onclick="setMode('scope')"
         >
-          🔭 望远镜
+          🔭 望远镜模式
         </button>
         <button class="mode-btn" id="mode-naked-btn" onclick="setMode('naked')">
           👁 肉眼观察
         </button>
-        <button
-          class="mode-btn"
-          id="mode-focal-btn"
-          onclick="toggleFocalShow()"
-        >
-          📐 显示焦距
+      </div>
+
+      <!-- Action buttons row -->
+      <div class="focus-top">
+        <button class="focus-btn" id="focus-btn" onclick="triggerFocus()">
+          <span id="focus-icon">⊙</span>
+          <span id="focus-label">自动对焦</span>
         </button>
+        <button class="count-btn" onclick="showGridCount()">🔢 查看线段数</button>
+        <div class="count-text" id="count-text">未查看</div>
       </div>
 
       <!-- Telescope SVG -->
@@ -522,18 +684,48 @@
         ></svg>
       </div>
 
-      <div class="sep"></div>
+      <!-- Separator + custom section title -->
+      <div class="sep-row">
+        <div class="sep-line"></div>
+        <span class="custom-section-label">✏️ 自定义焦距</span>
+      </div>
 
-      <!-- Eyepiece selector (no numbers) -->
+      <!-- Eyepiece selector + custom ep input -->
       <div class="lens-row">
         <div class="row-label">目<br />镜</div>
         <div class="lens-options" id="ep-options"></div>
+        <div class="custom-inline-wrap" id="custom-ep-wrap">
+          <input
+            type="number"
+            id="custom-ep"
+            class="custom-inline-input"
+            min="1"
+            max="500"
+            placeholder="目镜 mm"
+            onfocus="resetFocusOnCustomInput()"
+            oninput="updateCustomDisplay()"
+          />
+          <span class="custom-inline-unit">mm</span>
+        </div>
       </div>
 
-      <!-- Objective selector (no numbers) -->
+      <!-- Objective selector + custom obj input -->
       <div class="lens-row">
         <div class="row-label">物<br />镜</div>
         <div class="lens-options" id="obj-options"></div>
+        <div class="custom-inline-wrap" id="custom-obj-wrap">
+          <input
+            type="number"
+            id="custom-obj"
+            class="custom-inline-input"
+            min="1"
+            max="9999"
+            placeholder="物镜 mm"
+            onfocus="resetFocusOnCustomInput()"
+            oninput="updateCustomDisplay()"
+          />
+          <span class="custom-inline-unit">mm</span>
+        </div>
       </div>
     </div>
 
@@ -585,17 +777,75 @@
       let dragOriginY = 0
       let isDraggingNaked = false
 
-      function toggleFocalShow() {
-        S.showFocal = !S.showFocal
-        const btn = document.getElementById('mode-focal-btn')
-        if (S.showFocal) {
-          btn.innerHTML = '📐 隐藏焦距'
-          btn.classList.add('active')
-        } else {
-          btn.innerHTML = '📐 显示焦距'
-          btn.classList.remove('active')
+      // ── Custom Focal Length Helpers ────────────────────────────────
+      // 点击自定义输入框时，重置对焦状态
+      function resetFocusOnCustomInput() {
+        if (!S.focused && !S.focusing) return  // 本来就没对焦，无需处理
+        S.focused  = false
+        S.focusing = false
+        S.blur     = 12
+        const icon = document.getElementById('focus-icon')
+        const lbl  = document.getElementById('focus-label')
+        const btn  = document.getElementById('focus-btn')
+        if (icon) { icon.className = ''; icon.textContent = '⊙' }
+        if (lbl)  lbl.textContent  = '自动对焦'
+        if (btn)  btn.disabled     = false
+        const countText = document.getElementById('count-text')
+        if (countText && !countText.textContent.includes('自定义')) {
+          countText.textContent = '未查看'
         }
+        updateStatus()
+        drawOverlay()
+      }
+
+      function getCustomValues() {
+        const epEl  = document.getElementById('custom-ep')
+        const objEl = document.getElementById('custom-obj')
+        if (!epEl || !objEl) return null
+        const ep  = parseFloat(epEl.value)
+        const obj = parseFloat(objEl.value)
+        if (ep > 0 && obj > 0) return { ep, obj }
+        return null
+      }
+
+      // 任一输入框有值 → 进入自定义模式（卡片取消高亮）
+      function hasAnyCustomInput() {
+        const epEl  = document.getElementById('custom-ep')
+        const objEl = document.getElementById('custom-obj')
+        const ep  = parseFloat(epEl?.value)
+        const obj = parseFloat(objEl?.value)
+        return ep > 0 || obj > 0
+      }
+
+      function updateCustomDisplay() {
+        const countText = document.getElementById('count-text')
+        const custom = getCustomValues()
+        if (custom) {
+          const mag  = custom.obj / custom.ep
+          const segs = 240 / mag
+          if (countText) {
+            countText.textContent = `直径 ${formatSegCount(segs)} 段（自定义）`
+          }
+        } else {
+          // 清除自定义标记，恢复默认提示
+          if (countText && countText.textContent.includes('自定义')) {
+            countText.textContent = '未查看'
+          }
+        }
+        // 重建卡片：有自定义内容时取消预设卡片高亮
         buildLensCards()
+      }
+
+      function updateCustomPanel() {
+        const epWrap  = document.getElementById('custom-ep-wrap')
+        const objWrap = document.getElementById('custom-obj-wrap')
+        const epEl  = document.getElementById('custom-ep')
+        const objEl = document.getElementById('custom-obj')
+        const disabled = S.mode === 'naked'
+        if (epWrap)  epWrap.classList.toggle('inactive', disabled)
+        if (objWrap) objWrap.classList.toggle('inactive', disabled)
+        if (epEl)  epEl.disabled  = disabled
+        if (objEl) objEl.disabled = disabled
       }
 
       function getMag() {
@@ -1101,8 +1351,11 @@
         const TH = 82
         svg.setAttribute('viewBox', `0 0 ${TW} ${TH}`)
 
-        const ep = EYEPIECES.find((e) => e.f === S.ep)
+        // 查找预设；自定义值不在列表中时，按焦距反比估算镜片厚度（焦距短→厚）
+        const ep  = EYEPIECES.find((e) => e.f === S.ep)
+              ?? { f: S.ep,  thick: Math.max(0.06, Math.min(0.55, 2.6  / S.ep))  }
         const obj = OBJECTIVES.find((o) => o.f === S.obj)
+              ?? { f: S.obj, thick: Math.max(0.06, Math.min(0.44, 168  / S.obj)) }
 
         // ── Geometry (eyepiece LEFT → objective RIGHT) ──
         const midY = 43
@@ -1860,13 +2113,14 @@
         const epCon = document.getElementById('ep-options')
         const objCon = document.getElementById('obj-options')
         epCon.innerHTML = objCon.innerHTML = ''
-        const disabled = S.mode === 'naked'
+        const disabled  = S.mode === 'naked'
+        const usingCustom = hasAnyCustomInput()  // 任一输入框有值即取消预设高亮
 
         EYEPIECES.forEach((ep) => {
           const card = document.createElement('div')
           card.className =
             'lens-card' +
-            (ep.f === S.ep ? ' selected' : '') +
+            (!usingCustom && ep.f === S.ep ? ' selected' : '') +
             (disabled ? ' disabled' : '')
           let html = lensCardSVG(ep.f, ep.thick, 26, true)
           html += `<div class="lens-kind">${ep.f}mm</div>`
@@ -1880,7 +2134,7 @@
           const card = document.createElement('div')
           card.className =
             'lens-card' +
-            (ob.f === S.obj ? ' selected' : '') +
+            (!usingCustom && ob.f === S.obj ? ' selected' : '') +
             (disabled ? ' disabled' : '')
           let html = lensCardSVG(ob.f, ob.thick, 34, false)
           html += `<div class="lens-kind">${ob.f}mm</div>`
@@ -1923,6 +2177,7 @@
         buildLensCards()
         buildScopeSVG()
         drawOverlay()
+        updateCustomPanel()
       }
 
       function changeLens(type, val) {
@@ -1931,6 +2186,11 @@
         S.focused = false
         S.focusing = false
         S.blur = 12
+        // 选了预设局距，清空自定义输入
+        const epEl  = document.getElementById('custom-ep')
+        const objEl = document.getElementById('custom-obj')
+        if (epEl)  epEl.value  = ''
+        if (objEl) objEl.value = ''
         const icon = document.getElementById('focus-icon')
         icon.className = ''
         icon.textContent = '⊙'
@@ -1960,6 +2220,16 @@
       // ── Auto-Focus ────────────────────────────────────────
       function triggerFocus() {
         if (S.focusing || S.mode === 'naked') return
+
+        // 如果自定义输入有值，优先使用自定义焦距
+        const custom = getCustomValues()
+        if (custom) {
+          S.ep  = custom.ep
+          S.obj = custom.obj
+          buildLensCards()
+          buildScopeSVG()
+        }
+
         S.focusing = true
         S.focused = false
 
